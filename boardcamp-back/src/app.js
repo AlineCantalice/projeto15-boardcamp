@@ -3,6 +3,7 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import categoriesRouter from './routers/categoriesRouter.js'
 import gamesRouter from './routers/gamesRouter.js'
+import customersRouter from './routers/customersRouter.js'
 
 dotenv.config()
 
@@ -11,6 +12,7 @@ app.use(cors(), express.json())
 
 app.use(categoriesRouter)
 app.use(gamesRouter)
+app.use(customersRouter)
 
 const PORT = process.env.PORT || 4001
 app.listen(PORT, () => {
