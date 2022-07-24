@@ -21,7 +21,7 @@ export async function createCategory(req, res) {
     name,
   ])
 
-  if (existCategory.length > 0) {
+  if (existCategory[0]) {
     return res.status(409).send('Categoria já existe!')
   }
 

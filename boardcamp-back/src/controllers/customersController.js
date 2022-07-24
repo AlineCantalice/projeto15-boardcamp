@@ -25,7 +25,7 @@ export async function getCustomerById(req, res) {
     rows: customer,
   } = await connection.query(`SELECT * FROM customers WHERE id=$1`, [id])
 
-  if (customer.length > 0) {
+  if (customer[0]) {
     return res.status(200).send(customer)
   }
 
@@ -52,8 +52,8 @@ export async function createCustomer(req, res) {
 
   const {
     rows: customers,
-  } = await connection.query(`SELECT * FROM customers WHERE cpf=$1`, [
-    customer.cpf,
+  } = await connection.query(`SELECT * FROM customers WHERE cpf='$1'`, [
+    customer[0].cpf,
   ])
 
   if (customers[0]) {

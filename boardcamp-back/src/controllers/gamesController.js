@@ -1,7 +1,26 @@
 import connection from '../dbStrategies/postgres.js'
 
 export async function getAllGames(req, res) {
-  const { rows: games } = await connection.query('SELECT * FROM games')
+  let { name } = req.query
+  if (name) {
+    name = name.toLowerCase()
+    const { rows: games } = await connection.query(
+      `SELECT games.*, categories.name as "categoryName"
+       FROM games
+       JOIN categories
+       ON games."categoryId" = categories.id        
+       WHERE LOWER(games.name) LIKE $1`,
+      [`${name}%`],
+    )
+
+    res.status(200).send(games)
+  }
+  const { rows: games } = await connection.query(
+    `SELECT games.*, categories.name as "categoryName"
+       FROM games
+       JOIN categories
+       ON games."categoryId" = categories.id`,
+  )
 
   res.status(200).send(games)
 }
