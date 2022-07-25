@@ -1,4 +1,5 @@
 import connection from '../dbStrategies/postgres.js'
+import dayjs from 'dayjs'
 
 export async function getAllCustomers(req, res) {
   const { cpf } = req.query
@@ -35,6 +36,8 @@ export async function getCustomerById(req, res) {
 export async function createCustomer(req, res) {
   const customer = req.body
 
+  const date = dayjs(customer.birthday).format('YYYY-MM-DD')
+
   const cpfRegex = new RegExp(/[0-9]{11}/)
   const phoneRegex = new RegExp(/^(?=(?:.{10}|.{11})$)[0-9]*$/)
   const dateRegex = new RegExp(
@@ -45,7 +48,7 @@ export async function createCustomer(req, res) {
     !customer.name ||
     !cpfRegex.test(customer.cpf) ||
     !phoneRegex.test(customer.phone) ||
-    !dateRegex.test(customer.birthday)
+    !dateRegex.test(date)
   ) {
     return res.status(400).send('Os campos não estão preenchidos corretamente!')
   }
@@ -57,7 +60,7 @@ export async function createCustomer(req, res) {
   }
 
   await connection.query(
-    `INSERT INTO customers (name, phone, cpf, birthday) VALUES ('${customer.name}', '${customer.phone}', '${customer.cpf}', '${customer.birthday}')`,
+    `INSERT INTO customers (name, phone, cpf, birthday) VALUES ('${customer.name}', '${customer.phone}', '${customer.cpf}', TO_DATE('${customer.birthday}', 'YYYY-MM-DD'))`,
   )
 
   res.sendStatus(201)
@@ -66,6 +69,8 @@ export async function createCustomer(req, res) {
 export async function updateCustomer(req, res) {
   const customer = req.body
   const { id } = req.params
+
+  const date = dayjs(customer.birthday).format('YYYY-MM-DD')
 
   const cpfRegex = new RegExp(/[0-9]{11}/)
   const phoneRegex = new RegExp(/^(?=(?:.{10}|.{11})$)[0-9]*$/)
@@ -77,7 +82,7 @@ export async function updateCustomer(req, res) {
     !customer.name ||
     !cpfRegex.test(customer.cpf) ||
     !phoneRegex.test(customer.phone) ||
-    !dateRegex.test(customer.birthday)
+    !dateRegex.test(date)
   ) {
     return res.status(400).send('Os campos não estão preenchidos corretamente!')
   }
@@ -86,7 +91,7 @@ export async function updateCustomer(req, res) {
 
   if (customers.some((el) => el.cpf == customer.cpf)) {
     await connection.query(
-      `UPDATE customers SET name = '${customer.name}', phone = '${customer.phone}', cpf = '${customer.cpf}', birthday = '${customer.birthday}' WHERE id = ${id}`,
+      `UPDATE customers SET name = '${customer.name}', phone = '${customer.phone}', cpf = '${customer.cpf}', birthday = TO_DATE('${date}', 'YYYY-MM-DD') WHERE id = ${id}`,
     )
   
     return res.sendStatus(200)
