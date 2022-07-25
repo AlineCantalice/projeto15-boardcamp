@@ -15,17 +15,15 @@ export async function createCategory(req, res) {
     return res.status(400).send('O campo precisa ser preenchido!')
   }
 
-  const {
-    rows: existCategory,
-  } = await connection.query(`SELECT * FROM categories WHERE name=('$1')`, [
-    name,
-  ])
+  const { rows: existCategory } = await connection.query(
+    `SELECT * FROM categories`,
+  )
 
-  if (existCategory[0]) {
+  if (existCategory.some((el) => el.name.toLowerCase() == name.toLowerCase())) {
     return res.status(409).send('Categoria já existe!')
   }
 
-  await connection.query(`INSERT INTO categories (name) VALUES ('$1')`, [name])
+  await connection.query(`INSERT INTO categories (name) VALUES ('${name}')`)
 
   res.sendStatus(201)
 }

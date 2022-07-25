@@ -4,45 +4,52 @@ import dayjs from 'dayjs'
 export async function getAllRentals(req, res) {
   const { customerId, gameId } = req.query
 
+  const {
+    rows: rentalsDetails,
+  } = await connection.query(`SELECT rentals.*, customers.name as "customerName", games.name as "gameName", games."categoryId", categories.name as "categoryName"
+        FROM rentals 
+        JOIN customers 
+        ON rentals."customerId"=customers.id 
+        JOIN games 
+        ON rentals."gameId"=games.id
+        JOIN categories 
+        ON "games"."categoryId"=categories.id`)
+
+  let filteredRentals = []
   if (customerId) {
-    const {
-      rows: rentals,
-    } = await connection.query(
-      `SELECT rentals.*, customers.* AS customer, games.* AS game FROM rentals JOIN customers ON rentals."customerId"=customers.id JOIN games ON rentals."gameId"=games.id WHERE customers.id=$1`,
-      [customerId],
+    filteredRentals = rentalsDetails.filter(
+      (item) => item.customerId == customerId,
     )
-
-    return res.status(200).send(rentals)
-  }
-  if (gameId) {
-    const {
-      rows: rentals,
-    } = await connection.query(
-      `SELECT rentals.*, customers.* AS customer, games.* AS game FROM rentals JOIN customers ON rentals."customerId"=customers.id JOIN games ON rentals."gameId"=games.id WHERE games.id=$1`,
-      [customerId],
-    )
-
-    return res.status(200).send(rentals)
+  } else if (gameId) {
+    filteredRentals = rentalsDetails.filter((item) => item.gameId == gameId)
+  } else {
+    filteredRentals = rentalsDetails
   }
 
-  const { rows: rentals } = await connection.query(
-    `SELECT rentals.*, customers.* AS customer, games.* AS game FROM rentals JOIN customers ON rentals."customerId"=customers.id JOIN games ON rentals."gameId"=games.id`,
-  )
+  const result = filteredRentals.map((item) => {
+    return {
+      id: item.id,
+      customerId: item.customerId,
+      gameId: item.gameId,
+      rentDate: item.rentDate,
+      daysRented: item.daysRented,
+      returnDate: item.returnDate,
+      originalPrice: item.originalPrice,
+      delayFee: item.delayFee,
+      customer: {
+        id: item.customerId,
+        name: item.customerName,
+      },
+      game: {
+        id: item.gameId,
+        name: item.gameName,
+        categoryId: item.categoryId,
+        categoryName: item.categoryName,
+      },
+    }
+  })
 
-  /*console.log(rentals)
-
-  const rentalsJoin = {
-    ...rentals[0],
-    customer: rentals.map((value) => value.name),
-    game: rentals.map(
-      (value) => 
-      value.name
-    ),
-  }
-
-  console.log(rentalsJoin)*/
-
-  res.status(200).send(rentals)
+  res.status(200).send(result)
 }
 
 export async function createRental(req, res) {
@@ -61,8 +68,8 @@ export async function createRental(req, res) {
   if (
     !customer[0] ||
     !game[0] ||
-    rental.daysRented === 0 ||
-    game.stockTotal === 0
+    rental.daysRented == 0 ||
+    game.stockTotal == 0
   ) {
     return res.status(400).send('Preencha os campos corretamente!')
   }
@@ -72,15 +79,13 @@ export async function createRental(req, res) {
     parseInt(rental.daysRented) * parseInt(game[0].pricePerDay)
 
   await connection.query(
-    `INSERT INTO rentals ("customerId", "gameId", "rentDate", "daysRented", "returnDate", "originalPrice", "delayFee") VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    `INSERT INTO rentals ("customerId", "gameId", "rentDate", "daysRented", "originalPrice") VALUES ($1, $2, $3, $4, $5)`,
     [
       rental.customerId,
       rental.gameId,
       rentDate,
-      rental.daysRented,
-      null,
-      originalPrice,
-      null,
+      parseInt(rental.daysRented),
+      parseInt(originalPrice),
     ],
   )
 
@@ -98,30 +103,27 @@ export async function returnRental(req, res) {
     return res, sendStatus(404)
   }
 
-  if (rental[0].returnDate) {
+  if (rental[0].returnDate !== null) {
     return res.status(400)
   }
 
   const returnDate = dayjs().format('YYYY-MM-DD')
   const deadline = dayjs().add(rental[0].daysRented, 'day').format('YYYY-MM-DD')
 
-  const differDays = returnDate.diff(deadline, 'day')
-  console.log(differDays)
+  const differDays = dayjs().diff(deadline, 'day')
 
   if (differDays > 0) {
     const delayFee = rental[0].delayFee * differDays
     await connection.query(
-      `UPDATE rentals SET "returnDate"='$1', "delayFee"=$2 WHERE id=$3`,
-      [returnDate, delayFee, id],
+      `UPDATE rentals SET "returnDate"='${returnDate}', "delayFee"=${delayFee} WHERE id=${id}`,
     )
 
     return res.sendStatus(200)
   }
 
-  await connection.query(`UPDATE rentals SET "returnDate"='$1' WHERE id=$2`, [
-    returnDate,
-    id,
-  ])
+  await connection.query(
+    `UPDATE rentals SET "returnDate"='${returnDate}', "delayFee"=0 WHERE id=${id}`,
+  )
 
   res.sendStatus(200)
 }

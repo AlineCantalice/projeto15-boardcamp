@@ -13,7 +13,7 @@ export async function getAllGames(req, res) {
       [`${name}%`],
     )
 
-    res.status(200).send(games)
+    return res.status(200).send(games)
   }
   const { rows: games } = await connection.query(
     `SELECT games.*, categories.name as "categoryName"
@@ -37,25 +37,20 @@ export async function createGame(req, res) {
   if (
     !game.name ||
     !category[0] ||
-    game.stockTotal === 0 ||
-    game.pricePerDay === 0
+    game.stockTotal == 0 ||
+    game.pricePerDay == 0
   ) {
     return res.status(400).send('Os campos não estão preenchidos corretamente!')
   }
 
-  const {
-    rows: existGame,
-  } = await connection.query(`SELECT * FROM games WHERE name=('$1')`, [
-    game.name,
-  ])
+  const { rows: existGame } = await connection.query(`SELECT * FROM games`)
 
-  if (existGame.length > 0) {
+  if (existGame.some((a) => a.name.toUpperCase() == game.name.toUpperCase())) {
     return res.status(409).send('Jogo já existe!')
   }
 
   await connection.query(
-    `INSERT INTO games (name, image, "stockTotal", "categoryId", "pricePerDay") VALUES ('$1', '$2', '$3', '$4', '$5')`,
-    [game.name, game.image, game.stockTotal, game.categoryId, game.pricePerDay],
+    `INSERT INTO games (name, image, "stockTotal", "categoryId", "pricePerDay") VALUES ('${game.name}', '${game.image}', ${game.stockTotal}, ${game.categoryId}, ${game.pricePerDay})`,
   )
 
   res.sendStatus(201)

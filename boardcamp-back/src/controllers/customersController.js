@@ -21,12 +21,12 @@ export async function getAllCustomers(req, res) {
 export async function getCustomerById(req, res) {
   const { id } = req.params
 
-  const {
-    rows: customer,
-  } = await connection.query(`SELECT * FROM customers WHERE id=$1`, [id])
+  const { rows: customer } = await connection.query(
+    `SELECT * FROM customers WHERE id=${id}`,
+  )
 
   if (customer[0]) {
-    return res.status(200).send(customer)
+    return res.status(200).send(customer[0])
   }
 
   return res.status(404).send('Cliente não cadastrado!')
@@ -50,19 +50,14 @@ export async function createCustomer(req, res) {
     return res.status(400).send('Os campos não estão preenchidos corretamente!')
   }
 
-  const {
-    rows: customers,
-  } = await connection.query(`SELECT * FROM customers WHERE cpf='$1'`, [
-    customer[0].cpf,
-  ])
+  const { rows: customers } = await connection.query(`SELECT * FROM customers`)
 
-  if (customers[0]) {
+  if (customers.some((el) => el.cpf == customer.cpf)) {
     return res.status(409).send('Cliente já cadastrado!')
   }
 
   await connection.query(
-    `INSERT INTO customers (name, phone, cpf, birthday) VALUES ('$1', '$2', '$3', '$4')`,
-    [customer.name, customer.phone, customer.cpf, customer.birthday]
+    `INSERT INTO customers (name, phone, cpf, birthday) VALUES ('${customer.name}', '${customer.phone}', '${customer.cpf}', '${customer.birthday}')`,
   )
 
   res.sendStatus(201)
@@ -87,19 +82,14 @@ export async function updateCustomer(req, res) {
     return res.status(400).send('Os campos não estão preenchidos corretamente!')
   }
 
-  const {
-    rows: customers,
-  } = await connection.query(`SELECT * FROM customers WHERE cpf=$1`, [
-    customer.cpf,
-  ])
+  const { rows: customers } = await connection.query(`SELECT * FROM customers`)
 
-  if (customers[0]) {
+  if (customers.some((el) => el.cpf == customer.cpf)) {
     return res.status(409).send('Cliente já cadastrado!')
   }
 
   await connection.query(
-    `UPDATE customers SET name='$1', phone='$2', cpf='$3', birthday='$4' WHERE id=$5`,
-    [customer.name, customer.phone, customer.cpf, customer.birthday, id],
+    `UPDATE customers SET name = '${customer.name}', phone = '${customer.phone}', cpf = '${customer.cpf}', birthday = '${customer.birthday}' WHERE id = ${id}`,
   )
 
   res.sendStatus(200)
