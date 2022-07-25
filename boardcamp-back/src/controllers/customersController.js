@@ -60,7 +60,7 @@ export async function createCustomer(req, res) {
   }
 
   await connection.query(
-    `INSERT INTO customers (name, phone, cpf, birthday) VALUES ('${customer.name}', '${customer.phone}', '${customer.cpf}', TO_DATE('${customer.birthday}', 'YYYY-MM-DD'))`,
+    `INSERT INTO customers (name, phone, cpf, birthday) VALUES ('${customer.name}', '${customer.phone}', '${customer.cpf}', '${customer.birthday}')`,
   )
 
   res.sendStatus(201)
@@ -91,7 +91,7 @@ export async function updateCustomer(req, res) {
 
   if (customers.some((el) => el.cpf == customer.cpf)) {
     await connection.query(
-      `UPDATE customers SET name = '${customer.name}', phone = '${customer.phone}', cpf = '${customer.cpf}', birthday = TO_DATE('${date}', 'YYYY-MM-DD') WHERE id = ${id}`,
+      `UPDATE customers SET name = '${customer.name}', phone = '${customer.phone}', cpf = '${customer.cpf}', birthday = '${date}' WHERE id = ${id}`,
     )
   
     return res.sendStatus(200)
