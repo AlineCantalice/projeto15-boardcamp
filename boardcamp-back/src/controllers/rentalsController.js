@@ -139,7 +139,7 @@ export async function deleteRental(req, res) {
     return res.sendStatus(404)
   }
 
-  if (rental[0].returnDate !== null) {
+  if (rental[0].returnDate === null) {
     return res.sendStatus(400)
   }
 
