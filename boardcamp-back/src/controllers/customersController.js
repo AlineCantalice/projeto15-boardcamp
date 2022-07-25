@@ -85,12 +85,12 @@ export async function updateCustomer(req, res) {
   const { rows: customers } = await connection.query(`SELECT * FROM customers`)
 
   if (customers.some((el) => el.cpf == customer.cpf)) {
-    return res.status(409).send('Cliente já cadastrado!')
+    await connection.query(
+      `UPDATE customers SET name = '${customer.name}', phone = '${customer.phone}', cpf = '${customer.cpf}', birthday = '${customer.birthday}' WHERE id = ${id}`,
+    )
+  
+    return res.sendStatus(200)
   }
 
-  await connection.query(
-    `UPDATE customers SET name = '${customer.name}', phone = '${customer.phone}', cpf = '${customer.cpf}', birthday = '${customer.birthday}' WHERE id = ${id}`,
-  )
-
-  res.sendStatus(200)
+  res.status(409).send('CPF não cadastrado!')
 }
